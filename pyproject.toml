@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "armenian-institute"
+version = "0.1.0"
+description = "Publishing tooling for Armenian Institute book projects"
+authors = ["Stephen Masters <steve@scattercode.co.uk>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.9"
+ocrmypdf = "*"
+marker-pdf = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
