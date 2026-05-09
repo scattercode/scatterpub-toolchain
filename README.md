@@ -11,7 +11,7 @@ Scripts and Claude Code skills for digitising physical books from scans and prep
 ## What's included
 
 | Component | Purpose |
-|---|---|
+| --- | --- |
 | `scripts/extract-vellum.py` | Extract a Vellum project to Markdown |
 | `scripts/ocr-to-markdown.py` | OCR clean page scans into raw Markdown |
 | `scripts/clean-ocr.py` | Clean OCR artefacts, running headers, invisible characters |
@@ -116,7 +116,7 @@ python3 toolchain/scripts/clean-ocr.py "publishing/<title>/ocr/<slug>-raw.md" --
 ## Prerequisites
 
 | Tool | Install | Required for |
-|---|---|---|
+| --- | --- | --- |
 | Python 3.6+ | system / pyenv | all scripts |
 | Poetry | `pip install poetry` | Python dep management |
 | pandoc | `brew install pandoc` | `.docx` conversion |
