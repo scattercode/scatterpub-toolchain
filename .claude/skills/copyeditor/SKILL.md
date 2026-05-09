@@ -1,12 +1,12 @@
 ---
 name: copyeditor
-description: Copy-edit book manuscripts for the Armenian Institute. Use when the user asks you to copy-edit, proofread, or review a book, chapter, or extracted Markdown file. Produces a self-contained HTML annotation report with colour-coded issue cards (TYPO, PUNCT, STYLE, CONSISTENCY, QUERY), applying Hart's Rules and British English as the style baseline. Trigger on any request to review writing quality, flag errors, or produce a copy-edit review — including when the user simply loads the skill and provides a file path.
+description: Copy-edit book manuscripts for the Armenian Institute. Use when the user asks you to copy-edit, proofread, or review a book, chapter, or extracted Markdown file. Produces a self-contained HTML annotation report with colour-coded issue cards (TYPO, PUNCT, STYLE, CONSISTENCY, QUERY). Style baseline is determined by the book's language field in book.md — en-GB uses Hart's Rules (British English); en-US uses Chicago Manual of Style (US English). Trigger on any request to review writing quality, flag errors, or produce a copy-edit review — including when the user simply loads the skill and provides a file path.
 license: Proprietary. LICENSE.txt has complete terms
 ---
 
 # Copy Editor Skill — Armenian Institute
 
-Copy-edit book manuscripts and produce an HTML annotation report. Style baseline: **Hart's Rules** (*New Hart's Rules: The Oxford Guide for Writers and Editors*, 2005), British English.
+Copy-edit book manuscripts and produce an HTML annotation report. Style baseline is determined by the `language` field in the book's `book.md` file — read it before applying any style rules.
 
 ## Workflow
 
@@ -32,9 +32,12 @@ python3 scripts/clean-ocr.py "publishing/<title>/ocr/<book-slug>-raw.md" --join-
 Once the Markdown file exists:
 
 1. Read it in full before annotating anything.
-2. For Route B (OCR), make a dedicated **OCR artefact pass** first (see below).
-3. Work chapter by chapter. For each chapter, identify all issues.
-4. Write the completed HTML review to `publishing/<title>/review/<book-slug>-review.html` using the Write tool.
+2. Read `book.md` from the book's root folder (`publishing/<title>/book.md`) and check the `language` field:
+   - `en-GB` (or absent) → apply **Hart's Rules** (British English) — see style section below.
+   - `en-US` → apply **Chicago Manual of Style** (US English) — see style section below.
+3. For Route B (OCR), make a dedicated **OCR artefact pass** first (see below).
+4. Work chapter by chapter. For each chapter, identify all issues.
+5. Write the completed HTML review to `publishing/<title>/review/<book-slug>-review.html` using the Write tool. Use the detected style guide name in the report header (see HTML Output Format).
 
 ---
 
@@ -72,7 +75,7 @@ Note the correct form of every proper noun on first encounter. Flag any subseque
 
 ---
 
-## Hart's Rules — Key Guidelines for British English Book Publishing
+## Style rules — en-GB: Hart's Rules (British English)
 
 ### 1. Quotation marks
 
@@ -162,13 +165,83 @@ Use the **Oxford comma** (serial comma) before the final item in a list of three
 
 ---
 
+## Style rules — en-US: Chicago Manual of Style (US English)
+
+Apply these rules instead of Hart's Rules when `language: en-US` is set in `book.md`.
+
+### 1. Quotation marks
+
+- **Primary quotations use double marks**: "like this"
+- **Quotations within quotations use single marks**: "He said 'I don't know' and left."
+- **American punctuation convention**: closing commas and full stops always go *inside* the closing quotation mark, regardless of whether they belong to the quoted matter.
+  - Correct: She said, "I am ready." *(full stop inside)*
+  - Correct: She described herself as "ready." *(full stop inside — differs from Hart's)*
+- Flag any use of single quotes as primary quotation marks — this is British style.
+- Flag any inconsistency in quote style.
+
+### 2. Ellipsis
+
+- Three unspaced dots followed by a word space: `word... word`
+- Or a single Unicode ellipsis character (…) is acceptable.
+- When an ellipsis ends a complete sentence, a full stop precedes it: `word.... Next sentence`
+- Flag any inconsistency in ellipsis style throughout the book.
+
+### 3. Dashes
+
+- **Parenthetical asides**: use an **unspaced em dash**—like this—not a spaced en dash.
+  - Correct: `word—aside—word`
+  - Incorrect: `word – aside – word` (spaced en dash, British style)
+- **Ranges**: use an **unspaced en dash**: `1939–45`, `pp. 10–15`, `Monday–Friday`
+- Flag any spaced en dashes used for parenthetical asides — suggest replacing with unspaced em dash.
+- Flag any hyphen used where an en dash is needed for ranges.
+
+### 4. Hyphens and compound words
+
+Same rules as the en-GB section above.
+
+### 5. Capitalisation
+
+Same rules as the en-GB section above.
+
+### 6. Numbers and dates
+
+- **Spell out** one through ninety-nine in running prose; use numerals for 100 and above.
+- **Spell out** round numbers in prose: `two hundred`, `five thousand`.
+- **Dates**: `March 15, 2024` (month–day–year, US format); not `15 March 2024`.
+- **Centuries**: lowercase and spelled out — `the nineteenth century` (noun), `a nineteenth-century novel` (compound adjective).
+
+### 7. Spelling (American English)
+
+| Use | Avoid |
+|---|---|
+| color, honor, favor, neighbor | colour, honour, favour, neighbour |
+| center, theater, meter | centre, theatre, metre |
+| traveling, fulfilling, labeling | travelling, fulfilling, labelling |
+| catalog, dialog, analog | catalogue, dialogue, analogue |
+| program (all uses) | programme |
+| judgment (all uses) | judgement |
+| aging, likable | ageing, likeable |
+| realize, organize, recognize | realise, organise, recognise |
+
+Note: CMOS uses -ize endings (same as Oxford/Hart's) — this is not a point of difference between the two style guides.
+
+### 8. Oxford comma
+
+Same as the en-GB section — CMOS requires the Oxford comma.
+
+### 9. Punctuation spacing
+
+Same as the en-GB section.
+
+---
+
 ## Issue Categories
 
 | Code | Label | Colour | Use for |
 |---|---|---|---|
 | `typo` | TYPO | red | Spelling errors, wrong words, missing or doubled words |
 | `punctuation` | PUNCT | orange | Quote marks, dashes, ellipsis, comma, semicolon errors |
-| `style` | STYLE | yellow | British English, capitalisation, numbers, hyphenation |
+| `style` | STYLE | yellow | Spelling variants, capitalisation, numbers, hyphenation (language-specific) |
 | `consistency` | CONSISTENCY | blue | Same word/name formatted differently across the book |
 | `query` | QUERY | purple | Ambiguous phrasing, possible translator's idiom — flag for author/editor decision, do not correct |
 
@@ -188,6 +261,10 @@ When reviewing a translation (e.g. Mischa Kudian's translations of Vahan Totoven
 
 Write a single self-contained HTML file. The template is in `assets/review-template.html` — use it as the structure and CSS exactly. Replace `BOOK_TITLE` and `AUTHOR` in the header, fill in the summary counts, and add one `<section class="chapter">` per chapter.
 
+Replace the `STYLE_GUIDE` placeholder in the meta line with the detected style guide:
+- `en-GB` → `Hart's Rules (British English)`
+- `en-US` → `Chicago Manual of Style (US English)`
+
 **Rules for the context snippet:**
 - Include 6–10 words either side of the issue for searchability.
 - Use `<mark>` around only the specific word(s) in question.
@@ -197,6 +274,6 @@ Write a single self-contained HTML file. The template is in `assets/review-templ
 **Rules for the suggestion:**
 - For TYPO: give the corrected spelling.
 - For PUNCT: state the rule and give the corrected form.
-- For STYLE: state the Hart's rule and give the corrected form.
+- For STYLE: state the applicable rule (Hart's or CMOS) and give the corrected form.
 - For CONSISTENCY: quote the other occurrence(s) and their location (chapter name).
 - For QUERY: explain the ambiguity and ask a specific question for the editor.
