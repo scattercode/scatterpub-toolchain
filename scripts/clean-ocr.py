@@ -11,6 +11,9 @@ Always applied:
   - Unicode ligatures (fi fl ff ffi ffl) expanded to ASCII
   - Unnecessary Markdown backslash escapes removed: pandoc escapes \' \" \--
     in its Markdown output but these are not needed in plain prose Markdown
+  - Bold markers (**) stripped: OCR frequently wraps prose paragraphs in
+    double asterisks. Single-asterisk italic markers (used for chapter titles
+    such as *Pale-blue Flowers*) are preserved.
   - Trailing whitespace stripped from every line
   - Three or more consecutive blank lines collapsed to two
   - Running headers removed: the first short line after each page marker
@@ -194,6 +197,10 @@ def clean(text, do_join_hyphens):
         text = text.replace(k, v)
     stats['ligatures_expanded'] = n
 
+    n = text.count('**')
+    text = text.replace('**', '')
+    stats['bold_markers_removed'] = n
+
     n = text.count("\\'") + text.count('\\"') + text.count('\\--')
     text = unescape_markdown(text)
     stats['markdown_escapes_removed'] = n
@@ -255,6 +262,7 @@ def main():
     print(f'  {stats["invisible_chars_removed"]:4}  invisible characters removed')
     print(f'  {stats["nbsp_normalised"]:4}  non-breaking spaces normalised')
     print(f'  {stats["ligatures_expanded"]:4}  ligatures expanded')
+    print(f'  {stats["bold_markers_removed"]:4}  bold markers (**) removed')
     print(f'  {stats["markdown_escapes_removed"]:4}  unnecessary Markdown backslash escapes removed')
     print(f'  {stats["trailing_whitespace_lines"]:4}  lines with trailing whitespace stripped')
     print(f'  {stats["running_headers_removed"]:4}  running headers removed')
