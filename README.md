@@ -1,6 +1,10 @@
-# Ebook Toolchain
+# Scatterpub Toolchain
 
 Scripts and Claude Code skills for digitising physical books from scans and preparing manuscripts for publication in [Vellum](https://vellum.pub).
+
+## New here? Start with the example project
+
+**[scatterpub-toolchain-example](https://github.com/scattercode/scatterpub-toolchain-example)** is a ready-to-run project containing real sample scans and a step-by-step tutorial. Fork it, follow the tutorial, and you will have a complete working pipeline in around 30 minutes — without needing to set up a project from scratch.
 
 ---
 
@@ -26,7 +30,7 @@ The toolchain is designed to be embedded in a book project repository as a git s
 ### 1. Add the submodule
 
 ```bash
-git submodule add https://github.com/scattercode/ebook-toolchain.git toolchain
+git submodule add https://github.com/scattercode/scatterpub-toolchain.git toolchain
 git submodule update --init
 ```
 
@@ -70,8 +74,8 @@ The scripts read this automatically and inject it as front matter in every gener
 To use the toolchain directly (not as a submodule):
 
 ```bash
-git clone https://github.com/scattercode/ebook-toolchain.git
-cd ebook-toolchain
+git clone https://github.com/scattercode/scatterpub-toolchain.git
+cd scatterpub-toolchain
 brew install poppler tesseract pandoc
 poetry install
 ```
