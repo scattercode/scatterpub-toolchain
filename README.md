@@ -101,7 +101,7 @@ python3 toolchain/scripts/md-to-docx.py "publishing/<title>/review/<slug>.md"
 
 ```bash
 # Step 1: OCR the clean scans
-poetry run --directory toolchain python toolchain/scripts/ocr-to-markdown.py \
+toolchain/.venv/bin/python toolchain/scripts/ocr-to-markdown.py \
   "publishing/<title>/ocr/scans/clean"
 
 # Step 2: Clean the raw output

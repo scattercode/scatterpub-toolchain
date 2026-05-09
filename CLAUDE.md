@@ -165,5 +165,5 @@ Run scripts from the project root:
 
 ```bash
 python3 toolchain/scripts/extract-vellum.py "publishing/<title>/<title>.vellum"
-poetry run --directory toolchain python toolchain/scripts/ocr-to-markdown.py "..."
+toolchain/.venv/bin/python toolchain/scripts/ocr-to-markdown.py "..."
 ```
