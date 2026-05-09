@@ -95,12 +95,13 @@ Post-processes raw OCR Markdown to remove common artefacts. YAML front matter is
 python3 scripts/clean-ocr.py "publishing/<title>/ocr/<slug>-raw.md"
 # → publishing/<title>/ocr/<slug>-clean.md
 
-python3 scripts/clean-ocr.py "publishing/<title>/ocr/<slug>-raw.md" --join-hyphens
+python3 scripts/clean-ocr.py "publishing/<title>/ocr/<slug>-raw.md" --join-hyphens --reflow
 ```
 
-Always removes: soft hyphens and other invisible characters, unnecessary Markdown backslash escapes, running headers, trailing whitespace, excessive blank lines.
+Always removes: soft hyphens and other invisible characters, bold markers (`**`), unnecessary Markdown backslash escapes, running headers (including common OCR misreads such as `IO` for page 10), trailing whitespace, multiple consecutive spaces, excessive blank lines.
 
 - `--join-hyphens` — join lines ending with a hyphen to the following line (hyphen preserved)
+- `--reflow` — join soft line-breaks within paragraphs into single long lines; typeset paragraph indents (2+ leading spaces) are used to detect and preserve paragraph boundaries
 
 ### `scripts/clean-vellum.py`
 

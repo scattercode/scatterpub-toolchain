@@ -9,16 +9,20 @@ Always applied:
   - Soft hyphens (U+00AD) and other invisible characters removed
   - Non-breaking spaces normalised to regular spaces
   - Unicode ligatures (fi fl ff ffi ffl) expanded to ASCII
-  - Unnecessary Markdown backslash escapes removed: pandoc escapes \' \" \--
-    in its Markdown output but these are not needed in plain prose Markdown
   - Bold markers (**) stripped: OCR frequently wraps prose paragraphs in
     double asterisks. Single-asterisk italic markers (used for chapter titles
     such as *Pale-blue Flowers*) are preserved.
+  - Unnecessary Markdown backslash escapes removed: pandoc escapes \' \" \--
+    in its Markdown output but these are not needed in plain prose Markdown
   - Trailing whitespace stripped from every line
+  - Multiple consecutive spaces collapsed to one (OCR spacing artefacts such
+    as "VAHAN      TOTOVENTS" or "Scenes  from an Armenian Childhood")
   - Three or more consecutive blank lines collapsed to two
   - Running headers removed: the first short line after each page marker
     (<!-- N -->) that contains an isolated page number (e.g. "62 Tell Me,
-    Bella" or "Tell Me. Bella 70") is detected and dropped
+    Bella" or "Tell Me. Bella 70") is detected and dropped. Common OCR
+    misreads of page numbers are also recognised (e.g. "IO" for 10, "Il" for
+    11).
 
 Optional:
   --join-hyphens  Join lines that end with a hyphen to the following line,
@@ -29,10 +33,18 @@ Optional:
                   in the output and remove the hyphen manually where
                   appropriate.
 
+  --reflow        Join soft line-breaks within prose paragraphs. OCR preserves
+                  typeset line breaks, leaving each paragraph as several short
+                  lines. With --reflow, consecutive prose lines are joined into
+                  single long lines. Typeset paragraph indents (2+ leading
+                  spaces) are used to detect paragraph boundaries and a blank
+                  line is inserted between them. Run --join-hyphens together
+                  with --reflow to heal hyphenated line-breaks before reflowing.
+
 Usage:
   python3 scripts/clean-ocr.py "publishing/<title>/ocr/<slug>.md"
   python3 scripts/clean-ocr.py "publishing/<title>/ocr/<slug>.md" --output out.md
-  python3 scripts/clean-ocr.py "publishing/<title>/ocr/<slug>.md" --join-hyphens
+  python3 scripts/clean-ocr.py "publishing/<title>/ocr/<slug>.md" --join-hyphens --reflow
 
 If no output path is given, the file is written to:
   publishing/<title>/ocr/<slug>-clean.md
@@ -77,11 +89,15 @@ LIGATURES = {
 
 # Running header detection: the first non-blank line after a <!-- N --> marker
 # is a running header if it is short and contains an isolated page number at
-# the start or end (with optional leading capital letter for OCR noise like
-# "I09" -> 109).
-_HEADER_NUM_START = re.compile(r'^\s*[A-Z]?\d{1,3}[\s.,]+\S')
-_HEADER_NUM_END   = re.compile(r'\S[\s.,]+[A-Z]?\d{1,3}\s*$')
-_HEADER_BARE_NUM  = re.compile(r'^\s*[A-Z]?\d{1,3}\s*$')
+# the start or end.
+#
+# _PNUM recognises both real digits and common OCR misreads:
+#   [A-Z]?\d{1,3} — e.g. "62", "I09" (leading capital letter as OCR noise)
+#   I[0-9OlIo]    — e.g. "IO"=10, "Il"=11, "I2"-"I9" (capital I misread as 1)
+_PNUM             = r'(?:[A-Z]?\d{1,3}|I[0-9OlIo])'
+_HEADER_NUM_START = re.compile(r'^\s*' + _PNUM + r'[\s.,]+\S')
+_HEADER_NUM_END   = re.compile(r'\S[\s.,]+' + _PNUM + r'\s*$')
+_HEADER_BARE_NUM  = re.compile(r'^\s*' + _PNUM + r'\s*$')
 MAX_HEADER_LEN    = 70
 HEADER_SCAN_LINES = 3
 
@@ -166,6 +182,69 @@ def join_eol_hyphens(lines):
     return result, joined
 
 
+def _split_frontmatter(lines):
+    """Return (front_matter_lines, body_lines), leaving YAML front matter untouched."""
+    if not lines or lines[0].rstrip() != '---':
+        return [], lines
+    for i in range(1, len(lines)):
+        if lines[i].rstrip() == '---':
+            return lines[:i + 1], lines[i + 1:]
+    return [], lines
+
+
+def reflow_paragraphs(lines):
+    """Join soft line-breaks within prose paragraphs.
+
+    OCR preserves typeset line breaks, so each paragraph arrives as several
+    short lines. YAML front matter is passed through unchanged. Within the
+    body:
+
+      - A line with 2+ leading spaces signals a new typeset paragraph; a
+        blank separator is emitted before it (unless one already exists).
+      - Structural lines (headings, page markers, list items, horizontal
+        rules) are emitted unchanged and end any open paragraph.
+      - All other lines are continuation lines and are joined to the current
+        paragraph with a single space.
+    """
+    STRUCTURAL = re.compile(r'^\s*(?:#|---|<!--|\||>|\*\s|-\s|\d+\.)')
+    NEW_PARA   = re.compile(r'^\s{2,}\S')
+
+    front, body = _split_frontmatter(lines)
+
+    result = list(front)
+    para   = []
+    joined = 0
+
+    def flush():
+        nonlocal joined
+        if not para:
+            return
+        merged = re.sub(r'  +', ' ', ' '.join(l.strip() for l in para)).strip()
+        if merged:
+            result.append(merged)
+            joined += len(para) - 1
+        para.clear()
+
+    for line in body:
+        rline = line.rstrip()
+        if rline == '':
+            flush()
+            result.append('')
+        elif STRUCTURAL.match(rline):
+            flush()
+            result.append(rline)
+        elif NEW_PARA.match(rline):
+            flush()
+            if result and result[-1] != '':
+                result.append('')
+            para.append(rline)
+        else:
+            para.append(rline)
+
+    flush()
+    return result, joined
+
+
 def unescape_markdown(text):
     """Remove unnecessary backslash escapes added by pandoc.
 
@@ -179,7 +258,7 @@ def unescape_markdown(text):
     return text
 
 
-def clean(text, do_join_hyphens):
+def clean(text, do_join_hyphens, do_reflow):
     stats = {}
 
     n = sum(text.count(c) for c in REMOVE_CHARS)
@@ -217,7 +296,19 @@ def clean(text, do_join_hyphens):
     else:
         stats['hyphens_joined'] = 0
 
+    if do_reflow:
+        lines, stats['lines_reflowed'] = reflow_paragraphs(lines)
+    else:
+        stats['lines_reflowed'] = 0
+
     text = '\n'.join(lines)
+
+    # Collapse multiple consecutive horizontal spaces (always-on).
+    # Reflow handles this internally for joined lines; this catches any
+    # remaining instances in lines that were not reflowed.
+    text, n = re.subn(r'[^\S\n]{2,}', ' ', text)
+    stats['multi_spaces_collapsed'] = n
+
     before_len = len(text)
     text = re.sub(r'\n{4,}', '\n\n\n', text)
     stats['excess_blank_lines_collapsed'] = max(0, before_len - len(text))
@@ -236,6 +327,11 @@ def main():
         action='store_true',
         help='Join lines ending with a hyphen to the following line (hyphen preserved)',
     )
+    parser.add_argument(
+        '--reflow',
+        action='store_true',
+        help='Join soft line-breaks within prose paragraphs into single long lines',
+    )
     args = parser.parse_args()
 
     input_path = Path(args.input)
@@ -243,7 +339,7 @@ def main():
         sys.exit(f'Error: {input_path} not found')
 
     text = input_path.read_text(encoding='utf-8', errors='replace')
-    cleaned, stats = clean(text, args.join_hyphens)
+    cleaned, stats = clean(text, args.join_hyphens, args.reflow)
 
     if args.output:
         output_path = Path(args.output)
@@ -265,9 +361,12 @@ def main():
     print(f'  {stats["bold_markers_removed"]:4}  bold markers (**) removed')
     print(f'  {stats["markdown_escapes_removed"]:4}  unnecessary Markdown backslash escapes removed')
     print(f'  {stats["trailing_whitespace_lines"]:4}  lines with trailing whitespace stripped')
+    print(f'  {stats["multi_spaces_collapsed"]:4}  multiple consecutive spaces collapsed')
     print(f'  {stats["running_headers_removed"]:4}  running headers removed')
     if args.join_hyphens:
         print(f'  {stats["hyphens_joined"]:4}  end-of-line hyphens joined')
+    if args.reflow:
+        print(f'  {stats["lines_reflowed"]:4}  continuation lines reflowed')
     print(f'  ----')
     print(f'  {total:4}  total changes')
 

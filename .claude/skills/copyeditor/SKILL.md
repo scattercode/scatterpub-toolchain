@@ -25,15 +25,50 @@ poetry run python scripts/ocr-to-markdown.py "publishing/<title>/ocr/scans/clean
 # → publishing/<title>/ocr/<book-slug>-raw.md
 
 # Step 2: clean
-python3 scripts/clean-ocr.py "publishing/<title>/ocr/<book-slug>-raw.md" --join-hyphens
+python3 scripts/clean-ocr.py "publishing/<title>/ocr/<book-slug>-raw.md" --join-hyphens --reflow
 # → publishing/<title>/ocr/<book-slug>-clean.md
 ```
 
 Once the Markdown file exists:
 
 1. Read it in full before annotating anything.
-2. Work chapter by chapter. For each chapter, identify all issues.
-3. Write the completed HTML review to `publishing/<title>/review/<book-slug>-review.html` using the Write tool.
+2. For Route B (OCR), make a dedicated **OCR artefact pass** first (see below).
+3. Work chapter by chapter. For each chapter, identify all issues.
+4. Write the completed HTML review to `publishing/<title>/review/<book-slug>-review.html` using the Write tool.
+
+---
+
+## OCR Artefact Pass (Route B only)
+
+Before applying Hart's Rules, make a dedicated sweep for OCR-specific errors. These require different detection strategies from normal copy-editing — they stem from how the scanner and recognition engine misread letterforms, not from the author's or translator's choices.
+
+### Fused words
+
+Two words joined without a space, caused by OCR losing a word boundary: `ofMezre` (of Mezre), `onthe` (on the), `OldRomanRoad` (Old Roman Road). Look for a lowercase letter immediately followed by an uppercase letter mid-word, and for common short words (prepositions, articles, conjunctions) fused to the following word. Flag as **TYPO**.
+
+### Dropped characters
+
+OCR misses a character, producing a plausible-looking but wrong word: `bom` (born), `Westem` (Western). The letters `r`, `n`, and the combination `rn` are particularly prone to being dropped or merged. Read every word in context — a word that looks acceptable in isolation may be wrong. Flag as **TYPO**.
+
+### `d` misread as `cl`
+
+In many print typefaces, a lowercase `d` resembles `cl` to an OCR engine: `Saddler` → `Sadcller`, `middle` → `micldle`. Scan for any occurrence of `cl` adjacent to consonants where `d` would make more sense. Flag as **TYPO**.
+
+### Spurious characters in proper nouns
+
+OCR inserts wrong characters into names: `Tow:vanda` (colon inserted), `Ktikor` (missing `r`). Once you have seen each name in its correct form, any variant with an extra or wrong character is an OCR error. Flag as **TYPO**.
+
+### Split proper nouns
+
+When reflow joins lines with a space, a name that was split mid-word across a line break becomes two fragments: `Tour vanda` (Tourvanda), `Kri kor` (Krikor). Flag as **TYPO**.
+
+### Digit spacing
+
+OCR inserts a space mid-number: `189 3` (1893), `2 0th` (20th). Flag as **TYPO**.
+
+### Name consistency
+
+Note the correct form of every proper noun on first encounter. Flag any subsequent variant — whether OCR corruption or genuine inconsistency — as **CONSISTENCY** if it could be intentional, or **TYPO** if it is clearly OCR noise.
 
 ---
 
