@@ -17,7 +17,7 @@ Scripts and Claude Code skills for digitising physical books from scans and prep
 | `scripts/clean-ocr.py` | Clean OCR artefacts, running headers, invisible characters |
 | `scripts/clean-vellum.py` | Remove invisible artefacts from a `.vellum` package |
 | `scripts/md-to-docx.py` | Convert Markdown to Word for Vellum import |
-| `.claude/skills/copyeditor` | Claude Code skill: copy-edit to Hart's Rules, British English |
+| `.claude/skills/copyeditor` | Claude Code skill: copy-edit; style guide driven by `language` in `book.md` |
 | `.claude/skills/pdf` | Claude Code skill: general-purpose PDF processing |
 | `.claude/skills/skill-creator` | Claude Code skill: create and improve skills |
 
@@ -62,10 +62,16 @@ In each book folder, create a `book.md` with YAML front matter:
 ---
 title: "Book Title"
 author: Author Name
+language: en-GB
 ---
 ```
 
-The scripts read this automatically and inject it as front matter in every generated Markdown file.
+The scripts read this automatically and inject it as front matter in every generated Markdown file. The `language` field also tells the `/copyeditor` skill which style guide to apply during copy-editing:
+
+| `language` | Style guide |
+| --- | --- |
+| `en-GB` | Hart's Rules (British English) |
+| `en-US` | Chicago Manual of Style, 18th edition (US English) |
 
 ---
 
