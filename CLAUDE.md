@@ -31,14 +31,22 @@ poetry.lock             Pinned dependency versions
 
 ## Book metadata
 
-Each book project should contain a `book.md` file at the root of the book folder with YAML front matter declaring the title and author:
+Each book project should contain a `book.md` file at the root of the book folder with YAML front matter declaring the title, author, and language:
 
 ```markdown
 ---
 title: "Book Title"
 author: Author Name
+language: en-GB
 ---
 ```
+
+Supported `language` values:
+
+| Value | Style guide applied by `/copyeditor` |
+|---|---|
+| `en-GB` (or absent) | Hart's Rules (*New Hart's Rules*, 2005) — British English |
+| `en-US` | Chicago Manual of Style (18th edition) — US English |
 
 The scripts read this file automatically and inject the front matter at the top of every generated Markdown file. If `book.md` is absent, `extract-vellum.py` falls back to metadata stored inside the Vellum project.
 
