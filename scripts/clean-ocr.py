@@ -2,8 +2,9 @@
 """
 clean-ocr.py
 
-Post-processes assembled OCR Markdown (output of ocr-to-markdown.py) to
-remove common OCR artefacts. Writes a cleaned copy of the file.
+Post-processes prose Markdown to remove OCR artefacts and normalise
+typography. Accepts output from ocr-to-markdown.py or extract-vellum.py.
+Writes a cleaned copy of the file.
 
 Always applied:
   - Soft hyphens (U+00AD) and other invisible characters removed
@@ -23,6 +24,12 @@ Always applied:
     Bella" or "Tell Me. Bella 70") is detected and dropped. Common OCR
     misreads of page numbers are also recognised (e.g. "IO" for 10, "Il" for
     11).
+  - Straight quotation marks converted to typographic curly quotes: opening
+    context (preceded by whitespace, opening bracket, or dash) gives a left
+    quote; all other positions give a right quote or apostrophe.
+  - Spaced hyphens ( - ) replaced with spaced en-dashes ( – ) as used in
+    parenthetical asides in prose.
+  - Triple dots (...) replaced with the ellipsis character (…).
 
 Optional:
   --join-hyphens  Join lines that end with a hyphen to the following line,
@@ -245,6 +252,33 @@ def reflow_paragraphs(lines):
     return result, joined
 
 
+def smart_quotes(text):
+    """Convert straight quotation marks to typographic curly quotes.
+
+    Skips YAML front matter. Within the body, a straight quote preceded by
+    whitespace, a newline, an opening bracket, or a dash character is treated
+    as an opening (left) quote; all other positions are treated as closing
+    (right) quotes or apostrophes.
+    """
+    fm_match = re.match(r'^(---\n.*?\n---\n)', text, re.DOTALL)
+    front = fm_match.group(1) if fm_match else ''
+    body = text[len(front):]
+
+    OPEN_CTX = set(' \n\t\r([{—–-‘“')
+    result = []
+    for i, ch in enumerate(body):
+        if ch == "'":
+            prev = body[i - 1] if i > 0 else '\n'
+            result.append('‘' if prev in OPEN_CTX else '’')
+        elif ch == '"':
+            prev = body[i - 1] if i > 0 else '\n'
+            result.append('“' if prev in OPEN_CTX else '”')
+        else:
+            result.append(ch)
+
+    return front + ''.join(result)
+
+
 def unescape_markdown(text):
     """Remove unnecessary backslash escapes added by pandoc.
 
@@ -313,6 +347,18 @@ def clean(text, do_join_hyphens, do_reflow):
     text = re.sub(r'\n{4,}', '\n\n\n', text)
     stats['excess_blank_lines_collapsed'] = max(0, before_len - len(text))
 
+    before = sum(1 for c in text if c in '\'"')
+    text = smart_quotes(text)
+    stats['quotes_curled'] = before - sum(1 for c in text if c in '\'"')
+
+    n = text.count(' - ')
+    text = text.replace(' - ', ' – ')
+    stats['spaced_hyphens_to_endash'] = n
+
+    before_len = len(text)
+    text = re.sub(r'\.\.\.', '…', text)
+    stats['ellipses_normalised'] = (before_len - len(text)) // 2
+
     return text, stats
 
 
@@ -367,6 +413,9 @@ def main():
         print(f'  {stats["hyphens_joined"]:4}  end-of-line hyphens joined')
     if args.reflow:
         print(f'  {stats["lines_reflowed"]:4}  continuation lines reflowed')
+    print(f'  {stats["quotes_curled"]:4}  straight quotes converted to curly')
+    print(f'  {stats["spaced_hyphens_to_endash"]:4}  spaced hyphens converted to en-dashes')
+    print(f'  {stats["ellipses_normalised"]:4}  triple dots converted to ellipsis character')
     print(f'  ----')
     print(f'  {total:4}  total changes')
 

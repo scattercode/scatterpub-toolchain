@@ -92,15 +92,18 @@ poetry install
 
 ### From a Vellum source file
 
+The `.vellum` file is treated as final, manually edited content. Extract it and review directly — no automated cleaning pass is needed.
+
 ```bash
 # Extract to Markdown
-python3 toolchain/scripts/extract-vellum.py "publishing/<title>/<title>.vellum"
+python3 toolchain/scripts/extract-vellum.py "publishing/<title>/<title>.vellum" \
+  "publishing/<title>/draft/<slug>.md"
 
-# Copy-edit
+# Copy-edit review
 # Load /copyeditor in Claude Code and provide the extracted Markdown path
 
-# Generate Word document for re-import
-python3 toolchain/scripts/md-to-docx.py "publishing/<title>/review/<slug>.md"
+# Generate Word document
+python3 toolchain/scripts/md-to-docx.py "publishing/<title>/draft/<slug>.md"
 ```
 
 ### From physical book scans

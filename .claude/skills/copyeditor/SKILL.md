@@ -12,10 +12,13 @@ Copy-edit book manuscripts and produce an HTML annotation report. Style baseline
 
 The Markdown source may come from either of two routes. Both produce a file that begins with YAML front matter (`title`, `author`) followed by `##` chapter headings — extract the title and author from that front matter for the HTML report header.
 
-**Route A — Vellum (work-in-progress book):**
+**Route A — Vellum (final book, prepared for publication):**
+
+The `.vellum` file represents final, manually edited content. Extract it and review directly — no automated cleaning pass is applied.
+
 ```
-python3 scripts/extract-vellum.py "publishing/<title>/<title>.vellum"
-# → publishing/<title>/review/<book-slug>.md
+python3 scripts/extract-vellum.py "publishing/<title>/<title>.vellum" \
+  "publishing/<title>/draft/<book-slug>.md"
 ```
 
 **Route B — OCR scans (physical book scans):**

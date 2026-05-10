@@ -4,17 +4,20 @@ extract-vellum.py
 
 Extracts text content from a Vellum (.vellum) ebook project file into Markdown.
 
-A .vellum file is a macOS package directory containing an NSKeyedArchiver
-binary property list (content.vellumcontent). This script decodes the object
-graph and emits one Markdown section per chapter with full paragraph text.
+A .vellum file is either:
+  - A macOS package directory containing content.vellumcontent (older format)
+  - A ZIP archive containing content.vellumcontent at its root (newer format)
+
+In both cases the content file is an NSKeyedArchiver binary property list.
+This script decodes the object graph and emits one Markdown section per
+chapter with full paragraph text.
 
 The output starts with YAML front matter (title, author).  If a book.md file
 exists alongside the .vellum file, its front matter is used verbatim; otherwise
 front matter is generated from the metadata stored inside the Vellum project.
 
 Prerequisites:
-  Python 3.6+ with standard library only (plistlib handles the binary plist)
-  macOS (the .vellum package format is macOS-specific)
+  Python 3.6+ with standard library only (plistlib, zipfile)
 
 Usage:
   python3 scripts/extract-vellum.py "publishing/<title>/<title>.vellum"
@@ -24,9 +27,11 @@ If no output path is given, the file is written to:
   publishing/<title>/review/<book-slug>.md
 """
 
+import io
 import plistlib
 import re
 import sys
+import zipfile
 from pathlib import Path
 
 CHAPTER_TYPES = {
@@ -70,7 +75,7 @@ def slugify(text):
     return re.sub(r'[^\w]+', '-', text.strip().lower()).strip('-')
 
 
-def _build_front matter(title: str, author: str) -> str:
+def _build_front_matter(title: str, author: str) -> str:
     """Return a minimal YAML front matter block."""
     lines = ['---', f'title: "{title}"']
     if author:
@@ -79,13 +84,26 @@ def _build_front matter(title: str, author: str) -> str:
     return '\n'.join(lines)
 
 
-def extract(vellum_path: Path) -> str:
-    content_path = vellum_path / 'content.vellumcontent'
-    if not content_path.exists():
-        sys.exit(f'Error: content.vellumcontent not found in {vellum_path}')
+def _load_plist(vellum_path: Path) -> dict:
+    """Read content.vellumcontent from a package directory or ZIP archive."""
+    if vellum_path.is_dir():
+        content_path = vellum_path / 'content.vellumcontent'
+        if not content_path.exists():
+            sys.exit(f'Error: content.vellumcontent not found in {vellum_path}')
+        with open(content_path, 'rb') as f:
+            return plistlib.load(f)
+    else:
+        if not zipfile.is_zipfile(vellum_path):
+            sys.exit(f'Error: {vellum_path} is neither a directory nor a ZIP archive')
+        with zipfile.ZipFile(vellum_path) as z:
+            if 'content.vellumcontent' not in z.namelist():
+                sys.exit(f'Error: content.vellumcontent not found inside {vellum_path}')
+            with z.open('content.vellumcontent') as f:
+                return plistlib.load(io.BytesIO(f.read()))
 
-    with open(content_path, 'rb') as f:
-        plist = plistlib.load(f)
+
+def extract(vellum_path: Path) -> str:
+    plist = _load_plist(vellum_path)
 
     objects = plist['$objects']
 
@@ -95,22 +113,23 @@ def extract(vellum_path: Path) -> str:
     def s(ref):
         return get_string(objects, ref)
 
-    root = objects[2]
+    root_key = 'root' if 'root' in plist['$top'] else 'book'
+    root = deref(objects, plist['$top'][root_key])
     container = d(root['rootElementContainer'])
     children = [d(c) for c in d(container['children'])['NS.objects']]
 
     # Use book.md front matter if present; fall back to Vellum metadata.
     book_md = vellum_path.parent / 'book.md'
     if book_md.exists():
-        front matter = book_md.read_text(encoding='utf-8').strip()
+        front_matter = book_md.read_text(encoding='utf-8').strip()
     else:
         book_title = s(root.get('title')) or vellum_path.stem
         first = s(root.get('authorFirstName'))
         last = s(root.get('authorLastName'))
         author = f'{first} {last}'.strip()
-        front matter = _build_front matter(book_title, author)
+        front_matter = _build_front_matter(book_title, author)
 
-    lines = [front matter]
+    lines = [front_matter]
 
     for child in children:
         type_name = s(child.get('typeName'))
