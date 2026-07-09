@@ -178,22 +178,23 @@ toolchain/.venv/bin/python toolchain/scripts/ocr-to-markdown.py "..."
 ```
 
 
-## Commit messages
+## Git hooks
 
-This project uses [Conventional Commits](https://www.conventionalcommits.org/).
-They are enforced on every local commit by a shared git hook at
-`.githooks/commit-msg`.
+Git hooks are managed by [Lefthook](https://lefthook.dev) (`lefthook.yml`).
 
-Format: `<type>[(scope)][!]: <description>`
+- **pre-commit** — Ruff (`ruff check` and `ruff format --check`) on staged
+  Python files.
+- **commit-msg** — enforces [Conventional Commits](https://www.conventionalcommits.org/)
+  via the shared script at `.githooks/commit-msg`.
+
+Conventional Commits format: `<type>[(scope)][!]: <description>`
 
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`,
   `ci`, `chore`, `revert`.
-- The description is non-empty with no trailing full stop.
-- The header is 100 characters or fewer (72 or fewer preferred).
+- The description is non-empty with no trailing full stop; the header is 100
+  characters or fewer (72 or fewer preferred).
 - A body, if present, is separated from the header by a blank line.
 
-After cloning, enable the shared hooks once:
-
-```sh
-git config core.hooksPath .githooks
-```
+After cloning, install the hooks once with `lefthook install`. Requires the
+`lefthook` and `ruff` binaries on PATH (`brew install lefthook ruff`, or add
+ruff to the Poetry dev group).
