@@ -21,9 +21,11 @@ scripts/
   md-to-docx.py         Converts Markdown to Word (.docx) for Vellum import
 
 .claude/skills/
-  copyeditor/           Copy-editor skill (Hart's Rules, British English)
+  copyeditor            → symlink into scatterskills/ (see Skills)
   pdf/                  PDF processing skill
   skill-creator/        Skill creation and improvement skill
+
+scatterskills/          Submodule: github.com/scattercode/scatterskills
 
 pyproject.toml          Python dependency definition (Poetry)
 poetry.lock             Pinned dependency versions
@@ -137,12 +139,31 @@ python3 scripts/md-to-docx.py "publishing/<title>/review/<slug>.md"
 
 ### `/copyeditor`
 
-Located at `.claude/skills/copyeditor/`. Produces an HTML copy-edit review of an extracted Markdown file.
+Provided by [scatterskills](https://github.com/scattercode/scatterskills), a
+submodule at `scatterskills/`, symlinked to `.claude/skills/copyeditor`. It
+produces a self-contained HTML copy-edit review of a Markdown file, with issue
+categories TYPO, PUNCT, STYLE, CONSISTENCY and QUERY, and raises unusual
+phrasing in translations as QUERY rather than correcting it.
 
-- Style baseline: Hart's Rules (*New Hart's Rules: The Oxford Guide for Writers and Editors*, 2005), British English.
-- Output: a self-contained HTML file, open in any browser.
-- Issue categories: TYPO, PUNCT, STYLE, CONSISTENCY, QUERY.
-- Special handling for translated texts: unusual phrasings are raised as QUERY rather than corrected.
+**The skill is deliberately generic.** It copy-edits Markdown and knows
+nothing about this toolchain's layout, scripts or metadata conventions —
+that separation is what lets it be reused outside publishing work. Everything
+it needs to know about *this* project is below, and should be supplied when
+invoking it.
+
+| The skill needs | In a project using this toolchain |
+|---|---|
+| Which style variety applies | The `language` field in the book's `book.md` — `en-GB` → Hart's Rules, `en-US` → Chicago. See Book metadata above |
+| How to produce Markdown from a Vellum source | `python3 toolchain/scripts/extract-vellum.py "publishing/<title>/<title>.vellum" "publishing/<title>/draft/<slug>.md"` |
+| How to produce Markdown from scans | `poetry run python toolchain/scripts/ocr-to-markdown.py "publishing/<title>/ocr/scans/clean"` then `python3 toolchain/scripts/clean-ocr.py "publishing/<title>/ocr/<slug>-raw.md" --join-hyphens --reflow` |
+| Whether an OCR artefact pass is needed | Yes for the scan route, no for the Vellum route — Vellum content has already been edited by hand |
+| Where to write the review | `publishing/<title>/review/<slug>-review.html` |
+| Title and author for the report header | The YAML front matter the extraction scripts prepend from `book.md` |
+
+The skill ships its own `scripts/extract-vellum.py`, which is the same
+extractor as the toolchain's copy. Prefer the toolchain's when working in a
+book project, because it reads `book.md` and prepends the front matter the
+report header expects.
 
 ### `/pdf`
 
@@ -157,9 +178,13 @@ Located at `.claude/skills/skill-creator/`. Creates new skills, improves existin
 The intended use is as a git submodule:
 
 ```bash
-git submodule add https://github.com/scattercode/ebook-toolchain.git toolchain
-git submodule update --init
+git submodule add https://github.com/scattercode/scatterpub-toolchain.git toolchain
+git submodule update --init --recursive
 ```
+
+`--recursive` matters: the toolchain carries `scatterskills` as a submodule of
+its own, and `/copyeditor` resolves through it. Without it the symlink dangles
+and the skill silently fails to load.
 
 Then symlink the skills into the project's `.claude/skills/` so Claude Code can discover them:
 

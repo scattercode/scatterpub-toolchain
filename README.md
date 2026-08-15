@@ -17,7 +17,7 @@ Scripts and Claude Code skills for digitising physical books from scans and prep
 | `scripts/clean-ocr.py` | Clean OCR artefacts, running headers, invisible characters |
 | `scripts/clean-vellum.py` | Remove invisible artefacts from a `.vellum` package |
 | `scripts/md-to-docx.py` | Convert Markdown to Word for Vellum import |
-| `.claude/skills/copyeditor` | Claude Code skill: copy-edit; style guide driven by `language` in `book.md` |
+| `.claude/skills/copyeditor` | Copy-edit skill, symlinked from the `scatterskills` submodule; style guide driven by `language` in `book.md` |
 | `.claude/skills/pdf` | Claude Code skill: general-purpose PDF processing |
 | `.claude/skills/skill-creator` | Claude Code skill: create and improve skills |
 
@@ -31,7 +31,7 @@ The toolchain is designed to be embedded in a book project repository as a git s
 
 ```bash
 git submodule add https://github.com/scattercode/scatterpub-toolchain.git toolchain
-git submodule update --init
+git submodule update --init --recursive
 ```
 
 ### 2. Install Python dependencies
