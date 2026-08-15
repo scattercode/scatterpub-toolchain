@@ -21,7 +21,7 @@ scripts/
   md-to-docx.py         Converts Markdown to Word (.docx) for Vellum import
 
 .claude/skills/
-  copyeditor            → symlink into scatterskills/ (see Skills)
+  manuscript-copyeditor → symlink into scatterskills/ (see Skills)
   pdf/                  PDF processing skill
   skill-creator/        Skill creation and improvement skill
 
@@ -45,7 +45,7 @@ language: en-GB
 
 Supported `language` values:
 
-| Value | Style guide applied by `/copyeditor` |
+| Value | Style guide applied by `/manuscript-copyeditor` |
 |---|---|
 | `en-GB` (or absent) | Hart's Rules (*New Hart's Rules*, 2005) — British English |
 | `en-US` | Chicago Manual of Style (18th edition) — US English |
@@ -137,10 +137,10 @@ python3 scripts/md-to-docx.py "publishing/<title>/review/<slug>.md"
 
 ## Skills
 
-### `/copyeditor`
+### `/manuscript-copyeditor`
 
 Provided by [scatterskills](https://github.com/scattercode/scatterskills), a
-submodule at `scatterskills/`, symlinked to `.claude/skills/copyeditor`. It
+submodule at `scatterskills/`, symlinked to `.claude/skills/manuscript-copyeditor`. It
 produces a self-contained HTML copy-edit review of a Markdown file, with issue
 categories TYPO, PUNCT, STYLE, CONSISTENCY and QUERY, and raises unusual
 phrasing in translations as QUERY rather than correcting it.
@@ -183,14 +183,14 @@ git submodule update --init --recursive
 ```
 
 `--recursive` matters: the toolchain carries `scatterskills` as a submodule of
-its own, and `/copyeditor` resolves through it. Without it the symlink dangles
+its own, and `/manuscript-copyeditor` resolves through it. Without it the symlink dangles
 and the skill silently fails to load.
 
 Then symlink the skills into the project's `.claude/skills/` so Claude Code can discover them:
 
 ```bash
 mkdir -p .claude/skills
-ln -s ../../toolchain/.claude/skills/copyeditor .claude/skills/copyeditor
+ln -s ../../toolchain/.claude/skills/manuscript-copyeditor .claude/skills/manuscript-copyeditor
 ln -s ../../toolchain/.claude/skills/pdf .claude/skills/pdf
 ln -s ../../toolchain/.claude/skills/skill-creator .claude/skills/skill-creator
 ```

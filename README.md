@@ -17,7 +17,7 @@ Scripts and Claude Code skills for digitising physical books from scans and prep
 | `scripts/clean-ocr.py` | Clean OCR artefacts, running headers, invisible characters |
 | `scripts/clean-vellum.py` | Remove invisible artefacts from a `.vellum` package |
 | `scripts/md-to-docx.py` | Convert Markdown to Word for Vellum import |
-| `.claude/skills/copyeditor` | Copy-edit skill, symlinked from the `scatterskills` submodule; style guide driven by `language` in `book.md` |
+| `.claude/skills/manuscript-copyeditor` | Copy-edit skill, symlinked from the `scatterskills` submodule; style guide driven by `language` in `book.md` |
 | `.claude/skills/pdf` | Claude Code skill: general-purpose PDF processing |
 | `.claude/skills/skill-creator` | Claude Code skill: create and improve skills |
 
@@ -47,7 +47,7 @@ So that Claude Code can discover the skills via the standard `.claude/skills/` p
 
 ```bash
 mkdir -p .claude/skills
-ln -s ../../toolchain/.claude/skills/copyeditor .claude/skills/copyeditor
+ln -s ../../toolchain/.claude/skills/manuscript-copyeditor .claude/skills/manuscript-copyeditor
 ln -s ../../toolchain/.claude/skills/pdf .claude/skills/pdf
 ln -s ../../toolchain/.claude/skills/skill-creator .claude/skills/skill-creator
 ```
@@ -66,7 +66,7 @@ language: en-GB
 ---
 ```
 
-The scripts read this automatically and inject it as front matter in every generated Markdown file. The `language` field also tells the `/copyeditor` skill which style guide to apply during copy-editing:
+The scripts read this automatically and inject it as front matter in every generated Markdown file. The `language` field also tells the `/manuscript-copyeditor` skill which style guide to apply during copy-editing:
 
 | `language` | Style guide |
 | --- | --- |
@@ -100,7 +100,7 @@ python3 toolchain/scripts/extract-vellum.py "publishing/<title>/<title>.vellum" 
   "publishing/<title>/draft/<slug>.md"
 
 # Copy-edit review
-# Load /copyeditor in Claude Code and provide the extracted Markdown path
+# Load /manuscript-copyeditor in Claude Code and provide the extracted Markdown path
 
 # Generate Word document
 python3 toolchain/scripts/md-to-docx.py "publishing/<title>/draft/<slug>.md"
@@ -117,7 +117,7 @@ toolchain/.venv/bin/python toolchain/scripts/ocr-to-markdown.py \
 python3 toolchain/scripts/clean-ocr.py "publishing/<title>/ocr/<slug>-raw.md" --join-hyphens
 
 # Step 3: Copy-edit
-# Load /copyeditor in Claude Code and provide the cleaned Markdown path
+# Load /manuscript-copyeditor in Claude Code and provide the cleaned Markdown path
 ```
 
 ---
